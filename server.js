@@ -18,6 +18,11 @@ let schemaName = new Schema({
 }, {
   collection: 'collectionName'
 });
+
+schemaName.post('save', (doc) => {
+  console.log(doc._id);
+});
+
 var Model = mongoose.model('Model', schemaName);
 mongoose.connect('mongodb://localhost:27017/uploadImages');
 
@@ -41,9 +46,7 @@ const logger = new winston.Logger({
 });
 
 app.use(cors());
-
 app.use('/static', express.static(__dirname + '/static'));
-
 app.get('/', (req, res) => {
   res.sendfile("static/index.html");
 });
