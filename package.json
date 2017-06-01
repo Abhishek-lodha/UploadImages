@@ -4,6 +4,7 @@
   "devDependencies": {
     "async": "^2.4.0",
     "body-parser": "^1.9.3",
+    "cors": "^2.8.3",
     "express": "^4.9.8",
     "fast-json-patch": "^1.1.10",
     "fs": "0.0.1-security",
