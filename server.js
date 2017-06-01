@@ -4,10 +4,26 @@ const express = require("express"),
   request = require("request"),
   path = require("path"),
   multer = require("multer"),
-  cors = require("cors");
+  cors = require("cors"),
+  winston = require('winston');
 
-var upload = multer({
+let upload = multer({
   dest: __dirname + '/public/uploads/',
+});
+
+let router = express.Router();
+
+const logger = new winston.Logger({
+  level: 'verbose',
+  transports: [
+    // new winston.transports.Console({
+    //   timestamp: true
+    // }),
+    new winston.transports.File({
+      filename: 'app.log',
+      timestamp: true
+    })
+  ]
 });
 
 app.use(cors());
@@ -19,7 +35,8 @@ app.get('/', (req, res) => {
 });
 
 app.post('/upload', upload.single('image'), (req, res) => {
-  // res.json({req.files});
+  logger.info(req.file);
+  res.send(req.file.originalname + " saved successfully");
 });
 
 app.listen(8080, function() {
