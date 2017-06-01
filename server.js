@@ -7,7 +7,8 @@ const express = require("express"),
   cors = require("cors"),
   winston = require('winston'),
   mongo = require('mongodb'),
-  mongoose = require('mongoose');
+  mongoose = require('mongoose'),
+  thumb = require('node-thumbnail').thumb;
 
 let Schema = mongoose.Schema;
 let schemaName = new Schema({
@@ -16,13 +17,20 @@ let schemaName = new Schema({
   imagePath: String,
   thumbnailPath: String
 }, {
-  collection: 'collectionName'
+  collection: 'Images'
 });
 
-schemaName.post('save', (doc) => {
-  console.log(doc._id);
-  doc.thumbnailPath = doc.imagePath;
-});
+// schemaName.post('save', (doc) => {
+//   console.log(doc._id);
+//   doc.thumbnailPath = doc.imagePath;
+//   // thumb({
+//   //   source: doc.imagePath, // could be a filename: dest/path/image.jpg
+//   //   destination: 'public/uploads',
+//   //   concurrency: 4
+//   // }, function(files, err, stdout, stderr) {
+//   //   console.log('All done!');
+//   // });
+// });
 
 var Model = mongoose.model('Model', schemaName);
 mongoose.connect('mongodb://localhost:27017/uploadImages');
@@ -57,7 +65,8 @@ app.post('/upload', upload.single('image'), (req, res) => {
   var savedata = new Model({
     'originalname': req.file.originalname,
     'name': req.file.filename,
-    'imagePath': req.file.path
+    'imagePath': req.file.path,
+    'thumbnailPath': req.file.path
   }).save(function(err, result) {
     if (err) throw err;
     if (result) {
