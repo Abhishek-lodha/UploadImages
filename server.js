@@ -21,6 +21,7 @@ let schemaName = new Schema({
 
 schemaName.post('save', (doc) => {
   console.log(doc._id);
+  doc.thumbnailPath = doc.imagePath;
 });
 
 var Model = mongoose.model('Model', schemaName);
