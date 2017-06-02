@@ -32,9 +32,6 @@ let router = express.Router();
 const logger = new winston.Logger({
   level: 'verbose',
   transports: [
-    // new winston.transports.Console({
-    //   timestamp: true
-    // }),
     new winston.transports.File({
       filename: 'app.log',
       timestamp: true
