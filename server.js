@@ -8,7 +8,7 @@ const express = require("express"),
   winston = require('winston'),
   mongo = require('mongodb'),
   mongoose = require('mongoose'),
-  thumb = require('node-thumbnail').thumb;
+  cluster = require('cluster');
 
 let Schema = mongoose.Schema;
 let schemaName = new Schema({
@@ -19,18 +19,6 @@ let schemaName = new Schema({
 }, {
   collection: 'Images'
 });
-
-// schemaName.post('save', (doc) => {
-//   console.log(doc._id);
-//   doc.thumbnailPath = doc.imagePath;
-//   // thumb({
-//   //   source: doc.imagePath, // could be a filename: dest/path/image.jpg
-//   //   destination: 'public/uploads',
-//   //   concurrency: 4
-//   // }, function(files, err, stdout, stderr) {
-//   //   console.log('All done!');
-//   // });
-// });
 
 var Model = mongoose.model('Model', schemaName);
 mongoose.connect('mongodb://localhost:27017/uploadImages');
@@ -54,29 +42,41 @@ const logger = new winston.Logger({
   ]
 });
 
-app.use(cors());
-app.use('/static', express.static(__dirname + '/static'));
-app.get('/', (req, res) => {
-  res.sendfile("static/index.html");
-});
-
-app.post('/upload', upload.single('image'), (req, res) => {
-  logger.info(req.file);
-  var savedata = new Model({
-    'originalname': req.file.originalname,
-    'name': req.file.filename,
-    'imagePath': req.file.path,
-    'thumbnailPath': req.file.path
-  }).save(function(err, result) {
-    if (err) throw err;
-    if (result) {
-      res.json(result);
-    }
+if (cluster.isMaster) {
+  const numCPUs = require('os').cpus().length;
+  console.log(`Master ${process.pid} is running`);
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`worker ${worker.process.pid} died`);
+    cluster.fork();
   });
-  // res.send(req.file.originalname + " saved successfully");
-});
+} else {
+  app.use(cors());
+  app.use('/static', express.static(__dirname + '/static'));
+  app.get('/', (req, res) => {
+    res.sendfile("static/index.html");
+  });
 
-app.listen(8080, function() {
-  console.log("Working on port 8080");
-});
+  app.post('/upload', upload.single('image'), (req, res) => {
+    logger.info(req.file);
+    var savedata = new Model({
+      'originalname': req.file.originalname,
+      'name': req.file.filename,
+      'imagePath': req.file.path,
+      'thumbnailPath': req.file.path
+    }).save(function(err, result) {
+      if (err) throw err;
+      if (result) {
+        console.log('Worker %d running!', cluster.worker.id);
+        res.json(result);
+      }
+    });
+    // res.send(req.file.originalname + " saved successfully");
+  });
+  app.listen(8080, function() {
+    console.log(`Worker ${process.pid} is working`);
+  });
+}
 module.exports = app;
